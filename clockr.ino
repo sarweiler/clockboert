@@ -1,24 +1,23 @@
 int led = 12;
 int gateOut1 = 14;
-int midiOut = 15;
-//int startOut = 10;
+int urzwergOut = 15;
 int startIn = 9;
 
 int bpm = 160;
 
 int clockTimer = 0;
-int midiTimer = 0;
+int urzwergTimer = 0;
 
 int gateTimer = 0;
-int midiGateTimer = 0;
+int urzwergGateTimer = 0;
 
 int pulseWidth = 10;
-int midiPulseWidth = 10;
+int urzwergPulseWidth = 10;
 
 int startDebouncer = 0;
 
 boolean gateHigh = false;
-boolean midiGateHigh = false;
+boolean urzwergGateHigh = false;
 boolean running = false;
 
 void setup() {
@@ -26,14 +25,12 @@ void setup() {
   
   pinMode(led, OUTPUT);
   pinMode(gateOut1, OUTPUT);
-  pinMode(midiOut, OUTPUT);
-  //pinMode(startOut, OUTPUT);
+  pinMode(urzwergOut, OUTPUT);
   pinMode(startIn, INPUT);
 
   digitalWrite(led, LOW);
   digitalWrite(gateOut1, LOW);
-  digitalWrite(midiOut, LOW);
-  //digitalWrite(startOut, LOW);
+  digitalWrite(urzwergOut, LOW);
   
   resetAnalogTimers();
   startDebouncer = millis();
@@ -42,8 +39,8 @@ void setup() {
 void resetAnalogTimers() {
   resetAnalogClockTimer();
   resetGateTimer();
-  resetMidiTimer();
-  resetMidiGateTimer();
+  resetUrzwergTimer();
+  resetUrzwergGateTimer();
 }
 
 void resetAnalogClockTimer() {
@@ -54,13 +51,13 @@ void resetGateTimer() {
   gateTimer = millis();
 }
 
-void resetMidiTimer() {
-  midiTimer = millis();
-  resetMidiGateTimer();
+void resetUrzwergTimer() {
+  urzwergTimer = millis();
+  resetUrzwergGateTimer();
 }
 
-void resetMidiGateTimer() {
-  midiGateTimer = millis();
+void resetUrzwergGateTimer() {
+  urzwergGateTimer = millis();
 }
 
 void updateBpm(int newBpm) {
@@ -79,22 +76,20 @@ void setAnalogGateHigh() {
   Serial.println(bpm);
   digitalWrite(led, HIGH);
   digitalWrite(gateOut1, HIGH);
-  //setMidiGateHigh();
   resetAnalogTimers();
   gateHigh = true;
 }
 
-void setMidiGateHigh() {
-  //Serial.println("MIDI");
-  resetMidiTimer();
-  digitalWrite(midiOut, HIGH);
-  midiGateHigh = true;
+void setUrzwergGateHigh() {
+  resetUrzwergTimer();
+  digitalWrite(urzwergOut, HIGH);
+  urzwergGateHigh = true;
 }
 
-void setMidiGateLow() {
-  resetMidiGateTimer();
-  digitalWrite(midiOut, LOW);
-  midiGateHigh = false;
+void setUrzwergGateLow() {
+  resetUrzwergGateTimer();
+  digitalWrite(urzwergOut, LOW);
+  urzwergGateHigh = false;
 }
 
 void loop() {
@@ -107,9 +102,11 @@ void loop() {
     if((now - startDebouncer) >= 1000) {
       if(!running) {
         Serial.println("START");
+        // Weird Urzwerg needs a delay and
+        // an extra impulse for syncing correctly
         delay(100);
+        setUrzwergGateHigh(); 
         resetAnalogTimers();
-        setMidiGateHigh();
       } else {
         Serial.println("STOP");
         resetAnalogTimers();
@@ -120,31 +117,30 @@ void loop() {
   }
 
   if(running) {
-    int midiInterval = now - midiTimer;
+    int urzwergInterval = now - urzwergTimer;
     int analogInterval = now - clockTimer;
     
     // Analog clock
     if(analogInterval >= (bpm * 24)) {
       updateBpm(bpmMillis24Ppqn);
       setAnalogGateHigh();
-      setMidiGateHigh();
+      setUrzwergGateHigh();
     }
   
-    if(gateHigh && ((now - midiPulseWidth  - gateTimer) >= pulseWidth)) {
+    if(gateHigh && ((now - urzwergPulseWidth  - gateTimer) >= pulseWidth)) {
       digitalWrite(led, LOW);
       digitalWrite(gateOut1, LOW);
-      //digitalWrite(startOut, LOW);
       resetGateTimer();
       gateHigh = false;
     }
   
-    // Midi clock
-    if(midiInterval >= (bpm * 4)) {
-      setMidiGateHigh();
+    // Urzwerg clock
+    if(urzwergInterval >= (bpm * 4)) {
+      setUrzwergGateHigh();
     }
   
-    if(midiGateHigh && ((now - midiGateTimer) >= midiPulseWidth)) {
-      setMidiGateLow();
+    if(urzwergGateHigh && ((now - urzwergGateTimer) >= urzwergPulseWidth)) {
+      setUrzwergGateLow();
     }
   }
 }
