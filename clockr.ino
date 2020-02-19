@@ -60,12 +60,12 @@ void resetUrzwergGateTimer() {
   urzwergGateTimer = millis();
 }
 
-void updateBpm(int newBpm) {
-  bpm = newBpm;
-}
-
 int bpmToMillis(int bpm) {
   return round(60000/bpm);
+}
+
+int millisToBpm(int milliseconds) {
+  return round(60000/milliseconds);
 }
 
 int bpmToMillis24Ppqn(int bpm) {
@@ -73,7 +73,6 @@ int bpmToMillis24Ppqn(int bpm) {
 }
 
 void setAnalogGateHigh() {
-  Serial.println(bpm);
   digitalWrite(led, HIGH);
   digitalWrite(gateOut1, HIGH);
   resetAnalogTimers();
@@ -94,9 +93,9 @@ void setUrzwergGateLow() {
 
 void loop() {
   int now = millis();
-  int bpmRead = round(analogRead(0));
+  int bpmRead = round(analogRead(0) / 5);
   bpmRead = bpmRead >= 10 ? bpmRead : 10;
-  int bpmMillis24Ppqn = bpmToMillis24Ppqn(bpmRead);
+  int intervalMillis = bpmToMillis(bpmRead) / 4;
 
   if(digitalRead(startIn) == HIGH) {
     if((now - startDebouncer) >= 1000) {
@@ -121,8 +120,14 @@ void loop() {
     int analogInterval = now - clockTimer;
     
     // Analog clock
-    if(analogInterval >= (bpm * 24)) {
-      updateBpm(bpmMillis24Ppqn);
+    if(analogInterval >= (intervalMillis)) {
+      Serial.print("bpm: ");
+      Serial.print(bpmRead);
+      Serial.print(" / ms: ");
+      Serial.print(intervalMillis);
+      Serial.print(" / r: ");
+      Serial.println(bpmRead);
+      
       setAnalogGateHigh();
       setUrzwergGateHigh();
     }
@@ -135,7 +140,7 @@ void loop() {
     }
   
     // Urzwerg clock
-    if(urzwergInterval >= (bpm * 4)) {
+    if(urzwergInterval >= (intervalMillis / 6)) {
       setUrzwergGateHigh();
     }
   
