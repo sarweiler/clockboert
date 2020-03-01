@@ -27,10 +27,6 @@ long intervalOffset4x = 0;
 long intervalOffset6x = 0;
 
 long gateTimer = 0;
-long gateTimer2x = 0;
-long gateTimer4x = 0;
-long gateTimerPo = 0;
-long urzwergGateTimer = 0;
 
 long timeMultiplicator = 1000;
 
@@ -113,11 +109,7 @@ long getTime() {
 void resetAnalogTimers() {
   resetAnalogClockTimer();
   resetGlitchTimer();
-  resetUrzwergGateTimer();
   resetGateTimer();
-  resetGateTimer2x();
-  resetGateTimer4x();
-  resetGateTimerPo();
 }
 
 void resetIntervalOffsets() {
@@ -145,22 +137,6 @@ void resetGlitchTimer() {
 
 void resetGateTimer() {
   gateTimer = getTime();
-}
-
-void resetGateTimer2x() {
-  gateTimer2x = getTime();
-}
-
-void resetGateTimer4x() {
-  gateTimer4x = getTime();
-}
-
-void resetGateTimerPo() {
-  gateTimerPo = getTime();
-}
-
-void resetUrzwergGateTimer() {
-  urzwergGateTimer = getTime();
 }
 
 long bpmToMillis(long bpm) {
@@ -204,7 +180,6 @@ void setAnalogGateLow() {
 void set2xGateHigh() {
   digitalWrite(gateOut2x, HIGH);
   gate2xHigh = true;
-  resetGateTimer2x();
 }
 
 void set2xGateLow() {
@@ -216,7 +191,6 @@ void set2xGateLow() {
 void set4xGateHigh() {
   digitalWrite(gateOutLsdj, HIGH);
   gate4xHigh = true;
-  resetGateTimer4x();
 }
 
 void set4xGateLow() {
@@ -245,7 +219,6 @@ void setUrzwergGateHigh() {
   digitalWrite(urzwergClockLed, HIGH);
   urzwergGateHigh = true;
   urzwergLedOn = true;
-  resetUrzwergGateTimer();
 }
 
 void setUrzwergGateLow() {
@@ -260,7 +233,6 @@ void setPoGateHigh() {
   //Serial.println("PO HIGH");
   digitalWrite(gateOutPo, HIGH);
   gatePoHigh = true;
-  resetGateTimerPo();
 }
 
 void setPoGateLow() {
@@ -294,24 +266,20 @@ void loop() {
   // START/STOP BUTTON
   if(digitalRead(startIn) == HIGH) {
     if((now - buttonDebouncer) >= debounceInterval) {
+      digitalWrite(urzwergStartLed, HIGH);
+      delay(100);
       if(!running) {
         Serial.println("START");
         // Weird Urzwerg needs a delay and
         // an extra impulse for syncing correctly
-        digitalWrite(urzwergStartLed, HIGH);
-        delay(100);
         setUrzwergGateHigh(); 
-        resetAnalogTimers();
         running = true;
       } else {
-        digitalWrite(urzwergStartLed, HIGH);
-        delay(100);
-        digitalWrite(urzwergStartLed, LOW);
         Serial.println("STOP");
-        resetAnalogTimers();
         running = false;
         allLedsOff();
       }
+      resetAnalogTimers();
       buttonDebouncer = getTime();
     }
   }
