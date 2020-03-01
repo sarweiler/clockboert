@@ -36,7 +36,8 @@ long  pulseWidth = 1 * timeMultiplicator;
 long  pulseWidthPo = 10 * timeMultiplicator;
 long  pulseWidth2x = 10 * timeMultiplicator;
 long  pulseWidthLSDJ = 10 * timeMultiplicator;
-long  urzwergPulseWidth = 1 * timeMultiplicator;
+long  pulseWidthUrzwerg = 1 * timeMultiplicator;
+
 long  glitchLedLength = 25 * timeMultiplicator;
 long  urzwergLedLength = 10 * timeMultiplicator;
 long  gateLedLength = 25 * timeMultiplicator;
@@ -347,11 +348,11 @@ void loop() {
       setGlitchGateHigh();
     }
   
-    if(gateHigh && ((now - urzwergPulseWidth  - gateTimer) >= pulseWidth)) {
+    if(gateHigh && ((now - pulseWidthUrzwerg  - gateTimer) >= pulseWidth)) {
       setAnalogGateLow();
     }
 
-    if(gateLedOn && ((now - urzwergPulseWidth  - gateTimer) >= gateLedLength)) {
+    if(gateLedOn && ((now - pulseWidthUrzwerg  - gateTimer) >= gateLedLength)) {
       digitalWrite(gateLed, LOW);
       gateLedOn = false;
     }
@@ -388,7 +389,7 @@ void loop() {
       setUrzwergGateHigh();
     }
   
-    if(urzwergGateHigh && ((now - urzwergGateTimer) >= urzwergPulseWidth)) {
+    if(urzwergGateHigh && ((now - urzwergGateTimer) >= pulseWidthUrzwerg)) {
       setUrzwergGateLow();
     }
 
