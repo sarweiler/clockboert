@@ -8,5 +8,6 @@ it's far from finished, but in its current state it's useful to me. expansion an
 
 ## hardware
 
-my prototype hardware currently looks like this:
+i built a prototype hardware the makes use of a keyboard pcb that i designed for another project.
+
 ![clockbørt](img/clockbort.jpg "clockbørt")
