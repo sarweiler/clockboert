@@ -238,7 +238,7 @@ void loop() {
   
   long interval1x = bpmToMillis(bpmRead) / bpmDivider;
   long interval2x = round(interval1x / 2);
-  long intervalPo = round(interval1x / 2);
+  long intervalPo = round(interval1x / 1);
   long interval4x = round(interval1x / 4);
   long interval6x = round(interval1x / 6);
 
