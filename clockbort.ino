@@ -18,16 +18,18 @@ int bpmIn = A0;
 int bpm = 160;
 
 long clockTimer = 0;
-long clockTimer2x = 0;
-long clockTimer4x = 0;
-long poTimer = 0;
-long urzwergTimer = 0;
 long glitchTimer = 0;
 
 long intervalOffset2x = 0;
 long intervalOffsetPo = 0;
 long intervalOffset4x = 0;
 long intervalOffset6x = 0;
+
+long gateRef1x = 0;
+long gateRef2x = 0;
+long gateRefPo = 0;
+long gateRef4x = 0;
+long gateRef6x = 0;
 
 long gateTimer = 0;
 long gateTimer2x = 0;
@@ -109,11 +111,7 @@ long getTime() {
 
 void resetAnalogTimers() {
   resetAnalogClockTimer();
-  resetAnalogClockTimer2x();
-  resetAnalogClockTimer4x();
-  resetPoTimer();
   resetGlitchTimer();
-  resetUrzwergTimer();
   resetUrzwergGateTimer();
   resetGateTimer();
   resetGateTimer2x();
@@ -130,18 +128,6 @@ void resetIntervalOffsets() {
 
 void resetAnalogClockTimer() {
   clockTimer = getTime();
-}
-
-void resetAnalogClockTimer2x() {
-  clockTimer2x = getTime();
-}
-
-void resetAnalogClockTimer4x() {
-  clockTimer4x = getTime();
-}
-
-void resetPoTimer() {
-  poTimer = getTime();
 }
 
 void resetGlitchTimer() {
@@ -162,11 +148,6 @@ void resetGateTimer4x() {
 
 void resetGateTimerPo() {
   gateTimerPo = getTime();
-}
-
-void resetUrzwergTimer() {
-  urzwergTimer = getTime();
-  resetUrzwergGateTimer();
 }
 
 void resetUrzwergGateTimer() {
@@ -214,7 +195,6 @@ void setAnalogGateLow() {
 void set2xGateHigh() {
   digitalWrite(gateOut2x, HIGH);
   gate2xHigh = true;
-  resetAnalogClockTimer2x();
   resetGateTimer2x();
 }
 
@@ -225,10 +205,8 @@ void set2xGateLow() {
 
 // 4X / LSDJ GATE
 void set4xGateHigh() {
-  //Serial.println("LSDJ HIGH");
   digitalWrite(gateOutLsdj, HIGH);
   gate4xHigh = true;
-  resetAnalogClockTimer4x();
   resetGateTimer4x();
 }
 
@@ -258,7 +236,6 @@ void setUrzwergGateHigh() {
   digitalWrite(urzwergClockLed, HIGH);
   urzwergGateHigh = true;
   urzwergLedOn = true;
-  resetUrzwergTimer();
   resetUrzwergGateTimer();
 }
 
@@ -274,7 +251,6 @@ void setPoGateHigh() {
   //Serial.println("PO HIGH");
   digitalWrite(gateOutPo, HIGH);
   gatePoHigh = true;
-  resetPoTimer();
   resetGateTimerPo();
 }
 
@@ -289,18 +265,20 @@ void loop() {
   long bpmRead = round(analogRead(bpmIn) / 5);
   bpmRead = bpmRead >= 10 ? bpmRead : 10;
   long bpmDivider = 4;
+  
   long interval = bpmToMillis(bpmRead) / bpmDivider;
   long interval2x = round(interval / 2);
   long intervalPo = round(interval / 2);
   long interval4x = round(interval / 4);
   long interval6x = round(interval / 6);
   
+  long intervalWithOffset2x = interval2x + intervalOffset2x;
+  long intervalWithOffsetPo = intervalPo + intervalOffsetPo;
+  long intervalWithOffset4x = interval4x + intervalOffset4x;
+  long intervalWithOffset6x = interval6x + intervalOffset6x;
+  
   long now = getTime();
-  //long urzwergInterval = now - urzwergTimer;
   long analogInterval = now - clockTimer;
-  //long analogInterval2x = now - clockTimer2x;
-  //long analogInterval4x = now - clockTimer4x;
-  //long poInterval = now - poTimer;
   long glitchInterval = now - glitchTimer;
 
 
@@ -359,20 +337,22 @@ void loop() {
   if(running) {
     
     // 2x clock
-    if(analogInterval >= (interval2x + intervalOffset2x)) {
+    if(analogInterval >= intervalWithOffset2x) {
       set2xGateHigh();
       intervalOffset2x += interval2x;
+      gateRef2x = intervalWithOffset2x + pulseWidth2x;
     }
 
-    if(gate2xHigh && ((now - gateTimer2x) >= pulseWidth2x)) {
+    if(gate2xHigh && (analogInterval >= gateRef2x)) {
       set2xGateLow();
     }
 
 
     // PO clock
-    if(analogInterval >= (intervalPo + intervalOffsetPo)) {
+    if(analogInterval >= (intervalWithOffsetPo)) {
       setPoGateHigh();
       intervalOffsetPo += intervalPo;
+      gateRefPo = intervalWithOffsetPo + pulseWidthPo;
     }
 
     if(gatePoHigh && ((now - gateTimerPo) >= pulseWidthPo)) {
@@ -381,9 +361,10 @@ void loop() {
 
 
     // LSDJ/4x clock
-    if(analogInterval >= (interval4x + intervalOffset4x)) {
+    if(analogInterval >= (intervalWithOffset4x)) {
       set4xGateHigh();
       intervalOffset4x += interval4x;
+      gateRef4x = intervalWithOffset4x + pulseWidthLSDJ;
     }
 
     if(gate4xHigh && ((now - gateTimer4x) >= pulseWidthLSDJ)) {
@@ -392,9 +373,10 @@ void loop() {
 
 
     // Urzwerg/6x clock
-    if(analogInterval >= (interval6x + intervalOffset6x)) {
+    if(analogInterval >= (intervalWithOffset6x)) {
       setUrzwergGateHigh();
       intervalOffset6x += interval6x;
+      gateRef6x = intervalWithOffset6x + pulseWidthUrzwerg;
     }
   
     if(urzwergGateHigh && ((now - urzwergGateTimer) >= pulseWidthUrzwerg)) {
