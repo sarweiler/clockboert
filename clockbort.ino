@@ -24,6 +24,11 @@ long poTimer = 0;
 long urzwergTimer = 0;
 long glitchTimer = 0;
 
+long intervalOffset2x = 0;
+long intervalOffsetPo = 0;
+long intervalOffset4x = 0;
+long intervalOffset6x = 0;
+
 long gateTimer = 0;
 long gateTimer2x = 0;
 long gateTimer4x = 0;
@@ -114,6 +119,13 @@ void resetAnalogTimers() {
   resetGateTimer2x();
   resetGateTimer4x();
   resetGateTimerPo();
+}
+
+void resetIntervalOffsets() {
+  intervalOffset2x = 0;
+  intervalOffsetPo = 0;
+  intervalOffset4x = 0;
+  intervalOffset6x = 0;
 }
 
 void resetAnalogClockTimer() {
@@ -213,6 +225,7 @@ void set2xGateLow() {
 
 // 4X / LSDJ GATE
 void set4xGateHigh() {
+  //Serial.println("LSDJ HIGH");
   digitalWrite(gateOutLsdj, HIGH);
   gate4xHigh = true;
   resetAnalogClockTimer4x();
@@ -258,6 +271,7 @@ void setUrzwergGateLow() {
 
 // PO / 2x
 void setPoGateHigh() {
+  //Serial.println("PO HIGH");
   digitalWrite(gateOutPo, HIGH);
   gatePoHigh = true;
   resetPoTimer();
@@ -276,13 +290,17 @@ void loop() {
   bpmRead = bpmRead >= 10 ? bpmRead : 10;
   long bpmDivider = 4;
   long interval = bpmToMillis(bpmRead) / bpmDivider;
+  long interval2x = round(interval / 2);
+  long intervalPo = round(interval / 2);
+  long interval4x = round(interval / 4);
+  long interval6x = round(interval / 6);
   
   long now = getTime();
-  long urzwergInterval = now - urzwergTimer;
+  //long urzwergInterval = now - urzwergTimer;
   long analogInterval = now - clockTimer;
-  long analogInterval2x = now - clockTimer2x;
-  long analogInterval4x = now - clockTimer4x;
-  long poInterval = now - poTimer;
+  //long analogInterval2x = now - clockTimer2x;
+  //long analogInterval4x = now - clockTimer4x;
+  //long poInterval = now - poTimer;
   long glitchInterval = now - glitchTimer;
 
 
@@ -339,54 +357,44 @@ void loop() {
 
   // CLOCK
   if(running) {
-    // Analog clock
-    if(analogInterval >= (interval)) {
-      if(glitchActive) {
-        glitchIntervalDivider = round(glitchIntervalDividers[random(5)]);
-      }
-      setAnalogGateHigh();
-      setGlitchGateHigh();
-    }
-  
-    if(gateHigh && ((now - pulseWidthUrzwerg  - gateTimer) >= pulseWidth)) {
-      setAnalogGateLow();
-    }
-
-    if(gateLedOn && ((now - pulseWidthUrzwerg  - gateTimer) >= gateLedLength)) {
-      digitalWrite(gateLed, LOW);
-      gateLedOn = false;
-    }
-
+    
     // 2x clock
-    if(analogInterval2x >= (interval / 2)) {
+    if(analogInterval >= (interval2x + intervalOffset2x)) {
       set2xGateHigh();
+      intervalOffset2x += interval2x;
     }
 
     if(gate2xHigh && ((now - gateTimer2x) >= pulseWidth2x)) {
       set2xGateLow();
     }
 
-    // LSDJ/4x clock
-    if(analogInterval4x >= (interval / 4)) {
-      set4xGateHigh();
-    }
 
-    if(gate4xHigh && ((now - gateTimer4x) >= pulseWidthLSDJ)) {
-      set4xGateLow();
-    }
-
-    // PO/2x clock
-    if(poInterval >= (interval / 2)) {
+    // PO clock
+    if(analogInterval >= (intervalPo + intervalOffsetPo)) {
       setPoGateHigh();
+      intervalOffsetPo += intervalPo;
     }
 
     if(gatePoHigh && ((now - gateTimerPo) >= pulseWidthPo)) {
       setPoGateLow();
     }
 
+
+    // LSDJ/4x clock
+    if(analogInterval >= (interval4x + intervalOffset4x)) {
+      set4xGateHigh();
+      intervalOffset4x += interval4x;
+    }
+
+    if(gate4xHigh && ((now - gateTimer4x) >= pulseWidthLSDJ)) {
+      set4xGateLow();
+    }
+
+
     // Urzwerg/6x clock
-    if(urzwergInterval >= (interval / 6)) {
+    if(analogInterval >= (interval6x + intervalOffset6x)) {
       setUrzwergGateHigh();
+      intervalOffset6x += interval6x;
     }
   
     if(urzwergGateHigh && ((now - urzwergGateTimer) >= pulseWidthUrzwerg)) {
@@ -397,6 +405,7 @@ void loop() {
       digitalWrite(urzwergClockLed, LOW);
       urzwergLedOn = false;
     }
+
 
     // Glitch clock
     if(glitchInterval >= (interval / glitchIntervalDivider)) {
@@ -410,6 +419,28 @@ void loop() {
     if(glitchLedOn && ((now - glitchTimer) >= glitchLedLength)) {
       digitalWrite(glitchLed, LOW);
       glitchLedOn = false;
+    }
+
+
+    // Analog clock
+    if(analogInterval >= (interval)) {
+      Serial.print("GT: ");
+      Serial.println(analogInterval);
+      if(glitchActive) {
+        glitchIntervalDivider = round(glitchIntervalDividers[random(5)]);
+      }
+      setAnalogGateHigh();
+      setGlitchGateHigh();
+      resetIntervalOffsets();
+    }
+
+    if(gateHigh && ((now - pulseWidthUrzwerg  - gateTimer) >= pulseWidth)) {
+      setAnalogGateLow();
+    }
+
+    if(gateLedOn && ((now - pulseWidthUrzwerg  - gateTimer) >= gateLedLength)) {
+      digitalWrite(gateLed, LOW);
+      gateLedOn = false;
     }
   }
 }
