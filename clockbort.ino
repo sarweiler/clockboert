@@ -23,7 +23,7 @@ long glitchTimer = 0;
 long intervalOffset1x = 0;
 long intervalOffset2x = 0;
 long intervalOffsetPo = 0;
-long intervalOffset4x = 0;
+long intervalOffsetLSDJ = 0;
 long intervalOffset6x = 0;
 
 long timeMultiplicator = 1000;
@@ -37,7 +37,7 @@ long  pulseWidthUrzwerg = 1 * timeMultiplicator;
 long gateRef1x = pulseWidth1x;
 long gateRef2x = pulseWidth2x;
 long gateRefPo = pulseWidthPo;
-long gateRef4x = pulseWidthLSDJ;
+long gateRefLSDJ = pulseWidthLSDJ;
 long gateRef6x = pulseWidthUrzwerg;
 
 long  glitchLedLength = 25 * timeMultiplicator;
@@ -108,7 +108,7 @@ long getTime() {
 void resetIntervalOffsets() {
   intervalOffset2x = 0;
   intervalOffsetPo = 0;
-  intervalOffset4x = 0;
+  intervalOffsetLSDJ = 0;
   intervalOffset6x = 0;
 }
 
@@ -116,7 +116,7 @@ void resetGateRefs() {
   gateRef1x = pulseWidth1x;
   gateRef2x = pulseWidth2x;
   gateRefPo = pulseWidthPo;
-  gateRef4x = pulseWidthLSDJ;
+  gateRefLSDJ = pulseWidthLSDJ;
   gateRef6x = pulseWidthUrzwerg;
 }
 
@@ -239,12 +239,12 @@ void loop() {
   long interval1x = bpmToMillis(bpmRead) / bpmDivider;
   long interval2x = round(interval1x / 2);
   long intervalPo = round(interval1x / 1);
-  long interval4x = round(interval1x / 4);
+  long intervalLSDJ = round(interval1x / 1);
   long interval6x = round(interval1x / 6);
 
   long intervalWithOffset2x = interval2x + intervalOffset2x;
   long intervalWithOffsetPo = intervalPo + intervalOffsetPo;
-  long intervalWithOffset4x = interval4x + intervalOffset4x;
+  long intervalWithOffsetLSDJ = intervalLSDJ + intervalOffsetLSDJ;
   long intervalWithOffset6x = interval6x + intervalOffset6x;
   
   long now = getTime();
@@ -318,6 +318,7 @@ void loop() {
 
     // PO clock
     if(analogInterval >= (intervalWithOffsetPo)) {
+      dInt("PO", analogInterval);
       setPoGateHigh();
       intervalOffsetPo += intervalPo;
       gateRefPo = intervalWithOffsetPo + pulseWidthPo;
@@ -328,14 +329,15 @@ void loop() {
     }
 
 
-    // LSDJ/4x clock
-    if(analogInterval >= (intervalWithOffset4x)) {
+    // LSDJ clock
+    if(analogInterval >= (intervalWithOffsetLSDJ)) {
+      dInt("LD", analogInterval);
       set4xGateHigh();
-      intervalOffset4x += interval4x;
-      gateRef4x = intervalWithOffset4x + pulseWidthLSDJ;
+      intervalOffsetLSDJ += intervalLSDJ;
+      gateRefLSDJ = intervalWithOffsetLSDJ + pulseWidthLSDJ;
     }
 
-    if(gate4xHigh && (analogInterval >= gateRef4x)) {
+    if(gate4xHigh && (analogInterval >= gateRefLSDJ)) {
       set4xGateLow();
     }
 
@@ -368,6 +370,7 @@ void loop() {
     }
     
     if(analogInterval >= interval1x) {
+      dInt("GT", analogInterval);
       if(glitchActive) {
         glitchIntervalDivider = round(glitchIntervalDividers[random(5)]);
       }
@@ -378,4 +381,11 @@ void loop() {
       resetGateRefs();
     }
   }
+}
+
+
+// debug
+void dInt(String out, long analogInterval) {
+  Serial.print(out + ": ");
+  Serial.println(analogInterval);
 }
